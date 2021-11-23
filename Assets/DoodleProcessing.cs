@@ -66,9 +66,7 @@ public class DoodleProcessing : MonoBehaviour
 
         NormalizeData(); //converteix de 0 - 255 a 0 - 1.0
 
-        NeuralNetwork = new nn(len,64,4);
-
-        //StartTraining();   
+        NeuralNetwork = new nn(len,64,4); // Creates the neural network
     }
 
     // Update is called once per frame
@@ -97,6 +95,7 @@ public class DoodleProcessing : MonoBehaviour
             StartTraining();
         }
         */
+        /*
         if(Input.GetKeyDown(KeyCode.Alpha2)){
             for (int i = 0; i < 4; i++)
             {
@@ -104,7 +103,7 @@ public class DoodleProcessing : MonoBehaviour
             }
             ShowOnSprite(reverseFuckery(TestingData[LabelIndex][ImageIndex]));
             UpdateResult();
-        }
+        }*/
     }
 
     void DebugArrayImg(byte[][] array){
@@ -254,7 +253,7 @@ public class DoodleProcessing : MonoBehaviour
             }
         }
         epoch++;
-        //Debug.Log("Epoch: " + epoch);
+
         EpochCounter.SetText("Trained for {0} Epochs", epoch);
 
         TestNeuralNetPerformance();
@@ -293,13 +292,11 @@ public class DoodleProcessing : MonoBehaviour
         float[] InputArray;
         InputArray = ScalableTex.GetPixels().ColorToFloat();
 
-        //InputArray = reverseFuckery(InputArray);
-
         //Show on screen
         ShowOnSprite(InputArray);
 
         //flip and normalize
-        InputArray = reverseFuckery(InputArray);
+        InputArray = reverseFuckery(InputArray); // Unity es retrassat i dibuixe les textures de abaix a dalt de esquerra a dreta en lloc de a dalt abaix esquerra dreta i es un puto mal de cap convertir-ho
         
 
 
@@ -342,7 +339,7 @@ public class DoodleProcessing : MonoBehaviour
             for (int j = 0; j < 28; j++)
             {
                 original[i][j] = array[k++];
-                //Debug.Log(original[i][j]);  
+
             }
         }
 
@@ -401,29 +398,6 @@ public static class Extensions{
             result[i] = array[start+i];
         }
 
-        return result;
-    }
-
-    //Converteix una int[] a un float[] per a que ho accepti la meva llibreria NeuralNetwork
-    public static float[] IntArrayToFloatArray(this int[] array){
-
-        float[] result = new float[array.Length];
-
-        for (int i = 0; i < array.Length; i++)
-        {
-            result[i] = array[i];
-        }
-
-        return result;
-    }
-
-    public static float[] ByteArrayToFloatArray(this byte[] array){
-        float[] result = new float[array.Length];
-
-        for (int i = 0; i < array.Length; i++)
-        {
-            result[i] = array[i] / 255f;
-        }
         return result;
     }
     public static byte[] FloatArrayToByteArray(this float[] array){
