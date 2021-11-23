@@ -4,6 +4,9 @@ using UnityEngine;
 using System.IO;
 using System;
 using Random = UnityEngine.Random;
+using System.Linq;
+using TMPro;
+
 
 public class DoodleProcessing : MonoBehaviour
 {
@@ -40,11 +43,22 @@ public class DoodleProcessing : MonoBehaviour
     Texture2D ScalableTex;
     public GameObject targetSprite;
 
+    public GameObject ParentTextGO;
+
+    TextMeshProUGUI CatText, RainbowText, AirplaneText, BannanaText, EpochCounter, testpercenttext;
+
     string path = "Assets/binaries/";
     // Start is called before the first frame update
     float[] result = new float[4];
     void Start()
     {
+        CatText = ParentTextGO.transform.GetChild(1).gameObject.GetComponent<TextMeshProUGUI>();
+        RainbowText = ParentTextGO.transform.GetChild(2).gameObject.GetComponent<TextMeshProUGUI>();
+        AirplaneText = ParentTextGO.transform.GetChild(3).gameObject.GetComponent<TextMeshProUGUI>();
+        BannanaText = ParentTextGO.transform.GetChild(4).gameObject.GetComponent<TextMeshProUGUI>();
+        EpochCounter = ParentTextGO.transform.parent.GetChild(0).gameObject.GetComponent<TextMeshProUGUI>();
+        testpercenttext = ParentTextGO.transform.parent.GetChild(1).gameObject.GetComponent<TextMeshProUGUI>();
+        
         GetAllData();
         InitializeJaggedArrays();
         AssignTrainingData();
@@ -60,11 +74,14 @@ public class DoodleProcessing : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
+        /*
+        if(Input.GetKeyDown(KeyCode.Alpha1)){
+            TestNeuralNetPerformance();
+        }
         if(Input.GetKeyDown(KeyCode.LeftControl)){
             //ShowOnSprite();
             //DebugArrayImg(cats_training);
-            for (int i = 0; i < 15; i++)
+            for (int i = 0; i < 5; i++)
             {
                 StartTraining();
             }
@@ -75,12 +92,18 @@ public class DoodleProcessing : MonoBehaviour
             }
             ShowOnSprite(TestingData[cat][0]);  
         }
-        if(Input.GetMouseButton(1)){
+
+        if(Input.GetKeyDown(KeyCode.Alpha0)){
+            StartTraining();
+        }
+        */
+        if(Input.GetKeyDown(KeyCode.Alpha2)){
             for (int i = 0; i < 4; i++)
             {
                 result[i] = NeuralNetwork.FeedForward(TestingData[LabelIndex][ImageIndex])[i];
             }
-            ShowOnSprite(TestingData[LabelIndex][ImageIndex]);
+            ShowOnSprite(reverseFuckery(TestingData[LabelIndex][ImageIndex]));
+            UpdateResult();
         }
     }
 
@@ -113,19 +136,20 @@ public class DoodleProcessing : MonoBehaviour
             val[i] = data[index] & 0xff;
         }
 
-        for (int i = 0; i < 28; i++)
+        for (int y = 0; y < 28; y++)
         {
-            for (int j = 0; j < 28; j++)
+            for (int x = 0; x < 28; x++)
             {
-                int col = val[28*i+j];
+                float col = val[28*y+x] * 255f;
+
                 Color greyscale = new Color(col,col,col);
-                tex.SetPixel(28-j,28-i,greyscale);
+                tex.SetPixel(x,y,greyscale);
             }
         }
 
         tex.Apply();
 
-        Sprite sprite = Sprite.Create(tex,new Rect(0,0,tex.width,tex.height),new Vector2(0.5f,0.5f));
+        Sprite sprite = Sprite.Create(tex,new Rect(0,0,tex.width,tex.height),new Vector2(0.5f,0.5f),10);
         targetSprite.GetComponent<SpriteRenderer>().sprite = sprite;
     }
 
@@ -211,8 +235,9 @@ public class DoodleProcessing : MonoBehaviour
     }
 
     float[] targets = new float[] {0,0,0,0};
+    int epoch = 0;
 
-    void StartTraining(){
+    public void StartTraining(){
         for (int i = 0; i < (800*4); i++)
         {
             int index = Random.Range(0,4);
@@ -228,8 +253,11 @@ public class DoodleProcessing : MonoBehaviour
                 targets[j] = 0;
             }
         }
+        epoch++;
+        //Debug.Log("Epoch: " + epoch);
+        EpochCounter.SetText("Trained for {0} Epochs", epoch);
 
-        Debug.Log("Trained For One Epoch");
+        TestNeuralNetPerformance();
         
     }
 
@@ -243,21 +271,49 @@ public class DoodleProcessing : MonoBehaviour
                     TrainingData[i][j][k] = TrainingData[i][j][k] / 255f;
                 }
             }
+
+            for (int n = 0; n < 200; n++)
+            {
+                for (int o = 0; o < len; o++)
+                {
+                    TestingData[i][n][o] = TestingData[i][n][o] / 255f;
+                }
+            }
         }
     }
 
     public void GetDrawingData(){
-        //TextureScale tsc = new TextureScale();
+
+        //Get Texture data from drawable texture
         ScalableTex = new Texture2D(28,28);
         ScalableTex = TextureScale.scaled(DrawnTex,28,28,FilterMode.Trilinear);
         ScalableTex.Apply();
+
+        //Get Prediction Of Drawing
+        float[] InputArray;
+        InputArray = ScalableTex.GetPixels().ColorToFloat();
+
+        //InputArray = reverseFuckery(InputArray);
+
+        //Show on screen
+        ShowOnSprite(InputArray);
+
+        //flip and normalize
+        InputArray = reverseFuckery(InputArray);
         
-        GetResult(ScalableTex.GetPixels().ColorToFloat());
 
-        targetSprite.GetComponent<SpriteRenderer>().sprite = Sprite.Create(ScalableTex,new Rect(0,0,ScalableTex.width,ScalableTex.height),new Vector2(0.5f,0.5f));
 
-        byte[] bytes = ScalableTex.EncodeToPNG();
-        File.WriteAllBytes(Application.dataPath + "/../a.png", bytes);
+        //Show Confidence percentages
+        GetResult(InputArray);
+        UpdateResult();
+    }
+
+    void UpdateResult(){
+        //Show Confidence percentages
+        CatText.SetText("Cat: {0}%",result[0]*100f);
+        RainbowText.SetText("Rainbow: {0}%",result[1]*100f);
+        AirplaneText.SetText("Airplane: {0}%",result[2]*100f);
+        BannanaText.SetText("Bannana: {0}%",result[3]*100f);
     }
 
     void GetResult(float[] arr){
@@ -266,19 +322,73 @@ public class DoodleProcessing : MonoBehaviour
             result[i] = NeuralNetwork.FeedForward(arr)[i];
         }
     }
-    private Texture2D ScaleTexture(Texture2D source,int targetWidth,int targetHeight) {
-     Texture2D result=new Texture2D(targetWidth,targetHeight,source.format,false);
-     float incX=(1.0f / (float)targetWidth);
-     float incY=(1.0f / (float)targetHeight);
-     for (int i = 0; i < result.height; ++i) {
-         for (int j = 0; j < result.width; ++j) {
-             Color newColor = source.GetPixelBilinear((float)j / (float)result.width, (float)i / (float)result.height);
-             result.SetPixel(j, i, newColor);
-         }
-     }
-     result.Apply();
-     return result;
- }
+    
+    int k = 0;
+    float[] reverseFuckery(float[] array){
+
+        float[] result = new float[array.Length];
+
+        float[][] original = new float[28][];
+        float[][] flipped = new float[28][];
+
+        for (int i = 0; i < 28; i++)
+        {
+            original[i] = new float[28];
+            flipped[i] = new float[28];
+        }
+
+        for (int i = 0; i < 28; i++)
+        {
+            for (int j = 0; j < 28; j++)
+            {
+                original[i][j] = array[k++];
+                //Debug.Log(original[i][j]);  
+            }
+        }
+
+        for (int i = 0; i < 28; i++)
+        {
+            flipped[i] = original[27-i];
+        }
+
+        k = 0;
+
+        for (int i = 0; i < 28; i++)
+        {
+            for (int j = 0; j < 28; j++)
+            {
+                result[k++] = flipped[i][j];
+            }
+        }
+        k = 0;
+        return result;
+    }
+
+    public void TestNeuralNetPerformance(){
+
+        float[] prediciton;
+        int correct = 0;
+
+        for (int i = 0; i < 4; i++)
+        {
+            for (int j = 0; j < 200; j++)
+            {
+                prediciton = NeuralNetwork.FeedForward(TestingData[i][j]);
+                float maxValue = prediciton.Max();
+                
+                int maxIndex = prediciton.ToList().IndexOf(maxValue);
+                
+                if(maxIndex == i){
+                    correct++;
+                }
+            }
+        }
+
+        float percentage = 100 * correct / (200f * 4);
+        testpercenttext.SetText("Predicted succesfuly {0}% of the testing data", percentage);
+    }
+
+    
 
 }
 
@@ -312,7 +422,7 @@ public static class Extensions{
 
         for (int i = 0; i < array.Length; i++)
         {
-            result[i] = array[i];
+            result[i] = array[i] / 255f;
         }
         return result;
     }

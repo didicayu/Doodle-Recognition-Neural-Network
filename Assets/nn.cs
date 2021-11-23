@@ -35,6 +35,8 @@ public class nn
 
     public float[] FeedForward(float[] input_array){
 
+        float[] sofmaxOutput;
+
         //Generating hidden outputs
         Matrix inputs = Matrix.fromArray(input_array);
         Matrix hidden = Matrix.Multiply(weights_ih, inputs);
@@ -47,8 +49,11 @@ public class nn
         output.Add(bias_o);
         output.Map(sigmoid);
         
+        sofmaxOutput = softmax(output.toArray());
+
         //Sending it back
-        return output.toArray();
+        //return output.toArray();
+        return sofmaxOutput; //MAKES SURE ALL THE OUTPUT VALUES ADD UP TO 1 FOR PROBABILTY PURPOSES
 
     }
 
@@ -58,6 +63,22 @@ public class nn
 
     float dsigmoid(float y){
         return y * (1 - y);
+    }
+
+    float[] softmax(float[] array){
+        float sum = 0;
+        float[] output = new float[array.Length];
+
+        for (int i = 0; i < array.Length; i++)
+        {
+            sum += Mathf.Exp(array[i]);
+        }
+        for (int j = 0; j < array.Length; j++)
+        {
+            output[j] = Mathf.Exp(array[j]) / sum;
+        }
+
+        return output;
     }
 
     public void Train(float[] input_array, float[] target_array){
