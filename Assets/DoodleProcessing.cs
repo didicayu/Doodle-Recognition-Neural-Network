@@ -44,21 +44,16 @@ public class DoodleProcessing : MonoBehaviour
     public GameObject targetSprite;
 
     public GameObject ParentTextGO;
+    public TextMeshProUGUI CatText, RainbowText, AirplaneText, BannanaText, EpochCounter, testpercenttext;
 
-    TextMeshProUGUI CatText, RainbowText, AirplaneText, BannanaText, EpochCounter, testpercenttext;
-
-    string path = "Assets/binaries/";
+    string path;
     // Start is called before the first frame update
     float[] result = new float[4];
     void Start()
     {
-        CatText = ParentTextGO.transform.GetChild(1).gameObject.GetComponent<TextMeshProUGUI>();
-        RainbowText = ParentTextGO.transform.GetChild(2).gameObject.GetComponent<TextMeshProUGUI>();
-        AirplaneText = ParentTextGO.transform.GetChild(3).gameObject.GetComponent<TextMeshProUGUI>();
-        BannanaText = ParentTextGO.transform.GetChild(4).gameObject.GetComponent<TextMeshProUGUI>();
-        EpochCounter = ParentTextGO.transform.parent.GetChild(0).gameObject.GetComponent<TextMeshProUGUI>();
-        testpercenttext = ParentTextGO.transform.parent.GetChild(1).gameObject.GetComponent<TextMeshProUGUI>();
-        
+
+        path = Application.streamingAssetsPath + "/binaries/";
+
         GetAllData();
         InitializeJaggedArrays();
         AssignTrainingData();
@@ -67,43 +62,13 @@ public class DoodleProcessing : MonoBehaviour
         NormalizeData(); //converteix de 0 - 255 a 0 - 1.0
 
         NeuralNetwork = new nn(len,64,4); // Creates the neural network
+        Debug.Log(NeuralNetwork);
     }
 
     // Update is called once per frame
     void Update()
     {
-        /*
-        if(Input.GetKeyDown(KeyCode.Alpha1)){
-            TestNeuralNetPerformance();
-        }
-        if(Input.GetKeyDown(KeyCode.LeftControl)){
-            //ShowOnSprite();
-            //DebugArrayImg(cats_training);
-            for (int i = 0; i < 5; i++)
-            {
-                StartTraining();
-            }
-
-            for (int k = 0; k < 4; k++)
-            {
-                result[k] = NeuralNetwork.FeedForward(TestingData[cat][0])[k];
-            }
-            ShowOnSprite(TestingData[cat][0]);  
-        }
-
-        if(Input.GetKeyDown(KeyCode.Alpha0)){
-            StartTraining();
-        }
-        */
-        /*
-        if(Input.GetKeyDown(KeyCode.Alpha2)){
-            for (int i = 0; i < 4; i++)
-            {
-                result[i] = NeuralNetwork.FeedForward(TestingData[LabelIndex][ImageIndex])[i];
-            }
-            ShowOnSprite(reverseFuckery(TestingData[LabelIndex][ImageIndex]));
-            UpdateResult();
-        }*/
+        
     }
 
     void DebugArrayImg(byte[][] array){
@@ -298,8 +263,6 @@ public class DoodleProcessing : MonoBehaviour
         //flip and normalize
         InputArray = reverseFuckery(InputArray); // Unity es retrassat i dibuixe les textures de abaix a dalt de esquerra a dreta en lloc de a dalt abaix esquerra dreta i es un puto mal de cap convertir-ho
         
-
-
         //Show Confidence percentages
         GetResult(InputArray);
         UpdateResult();
